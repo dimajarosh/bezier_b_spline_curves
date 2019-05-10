@@ -1,35 +1,52 @@
-from graphics import *
-import numpy
+import multiprocessing as mp
+import time
 
-points = [[0,0],[1,1],[2,0], [3,0.5], [2, 2], [0.5, 5]]
+import matplotlib.pyplot as plt
+import numpy as np
 
-def binominal(i, n):
-	return numpy.math.factorial(n)/(numpy.math.factorial(i)*(numpy.math.factorial(n-i)))
-
-win = GraphWin("My Window", 1000, 500)
-win.setBackground(color_rgb(0,0,0))
-
-for point in points:
-	pt = Point(point[0]*100, (500 - point[1]*100))
-	pt.setFill(color_rgb(255, 0, 0))
-	pt.draw(win)
-
-t=0
-while(t<=1.0):
-	x = 0
-	y = 0
-	# z = 0
-	for index, point in enumerate(points):
-		x = x + (binominal(index, len(points)-1) * (t**index)*(1-t)**((len(points)-1)-index))*point[0]
-		y = y + (binominal(index, len(points)-1) * (t**index)*(1-t)**((len(points)-1)-index))*point[1]
-		# z = z + (binominal(index, len(points)-1) * (t**index)*(1-t)**((len(points)-1)-index))*point[2]
-	pt = Point(x*100, (500 - y*100))
-	pt.setFill(color_rgb(100, 255, 50))
-	pt.draw(win)
-	# print(x, y)
-	t = t + 0.0005 # точність
-
-win.getMouse()
-win.close()
+from constants import PROCESSES, STEP, POINT_COUNT
 
 
+def binomial(i, n):
+    return np.math.factorial(n) / (np.math.factorial(i) * (np.math.factorial(n - i)))
+
+
+def calculate_coord(points, t):
+    x = 0
+    y = 0
+    for index, point in enumerate(points):
+        x = x + (binomial(index, len(points) - 1) * (t ** index) * (1 - t) ** ((len(points) - 1) - index)) * point[0]
+        y = y + (binomial(index, len(points) - 1) * (t ** index) * (1 - t) ** ((len(points) - 1) - index)) * point[1]
+    return x, y
+
+
+def start():
+    # points = [(0, 0), (1, 1), (2, 0), (3, 0.5), (2, 2), (0.5, 5)]
+    points = np.random.random(POINT_COUNT)
+    points = [(idx, p) for idx, p in enumerate(points)]
+
+    for pn in PROCESSES:
+        process_count = 2 ** pn
+
+        time1 = time.time()
+
+        steps = np.arange(0, 1, STEP)
+        pool = mp.Pool(process_count)
+        results = pool.starmap(calculate_coord, [(points, t) for t in steps])
+        pool.close()
+
+        time2 = time.time()
+        print("%s processes. Time: %s" % (process_count, time2 - time1))
+
+        plt.figure()
+        for x, y in points:
+            plt.scatter(x, y, color='red')
+        result_x = [el[0] for el in results]
+        result_y = [el[1] for el in results]
+        plt.plot(result_x, result_y, color='blue')
+        plt.grid(True)
+        plt.savefig('bezier_result.png')
+
+
+if __name__ == "__main__":
+    start()
