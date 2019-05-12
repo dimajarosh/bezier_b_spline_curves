@@ -1,20 +1,25 @@
-from graphics import *
-import sys
+import multiprocessing as mp
+
+import matplotlib.pyplot as plt
 import numpy as np
 
-def bspline(t, degree, points, knots = [], weights = []):
+from constants import POINT_COUNT, PROCESSES, STEP
+from graphics import *
+
+
+def bspline(t, degree, points, knots=list(), weights=list()):
     n = len(points)
     d = len(points[0])
 
-    if(len(weights) == 0):
+    if len(weights) == 0:
         for x in range(n):
             weights.append(1)
 
-    if(len(knots) == 0):
-        for x in range(n+degree+1):
+    if len(knots) == 0:
+        for x in range(n + degree + 1):
             knots.append(x)
 
-    domain = [degree, len(knots)-1 - degree]
+    domain = [degree, len(knots) - 1 - degree]
 
     low = knots[domain[0]]
     high = knots[domain[1]]
@@ -22,12 +27,10 @@ def bspline(t, degree, points, knots = [], weights = []):
     t = t * (high - low) + low
 
     s = domain[0]
-    while(s < domain[1]):
-        if(knots[s] <= t <= knots[s+1]):
+    while s < domain[1]:
+        if knots[s] <= t <= knots[s + 1]:
             break
         s = s + 1
-
-    # print(s)
 
     v = []
     for i in range(n):
@@ -36,39 +39,53 @@ def bspline(t, degree, points, knots = [], weights = []):
             v[i].append(points[i][j] * weights[i])
         v[i].append(weights[i])
 
-    # print(v)
-
-    for l in range(1, degree+1):
-        for i in range(s, s-degree-1+l, -1):
-            alpha = (t - knots[i]) / (knots[i+degree+1-l] - knots[i])
-            for j in range(0, d+1):
-                v[i][j] = (1 - alpha) * v[i-1][j] + alpha * v[i][j]
+    for l in range(1, degree + 1):
+        for i in range(s, s - degree - 1 + l, -1):
+            alpha = (t - knots[i]) / (knots[i + degree + 1 - l] - knots[i])
+            for j in range(0, d + 1):
+                v[i][j] = (1 - alpha) * v[i - 1][j] + alpha * v[i][j]
 
     result = []
     for i in range(d):
-        result.append(v[s][i]/v[s][d])
+        result.append(v[s][i] / v[s][d])
     return result
 
-points = [
-  [-1.0,  0.0],
-  [-0.5,  0.5],
-  [ 0.5, -0.5],
-  [ 1.0,  0.0]
-]
 
-degree = 2 # number of points for approximation
-# knots = [0, 1, 2, 3, 4, 5, 6]
+def start():
+    # points = [
+    #     (-1.0, 0.0),
+    #     (-0.5, 0.5),
+    #     (0.5, -0.5),
+    #     (1.0, 0.0)
+    # ]
 
-t = 0
-win = GraphWin("My Window", 1000, 900)
-win.setBackground(color_rgb(0,0,0))
+    points = np.random.random(POINT_COUNT)
+    points = [(idx, p) for idx, p in enumerate(points)]
 
-while(t<1):
-    sums = bspline(t, degree, points) # generate x, y coor of point
-    pt = Point(sums[0]*100, (300 - sums[1]*100))
-    pt.setFill(color_rgb(100, 255, 50))
-    pt.draw(win)
-    t = t + 0.01
+    degree = 25  # number of points for approximation
+    # knots = [0, 1, 2, 3, 4, 5, 6]
+    for pn in PROCESSES:
+        process_count = 2 ** pn
 
-win.getMouse()
-win.close()
+        time1 = time.time()
+
+        steps = np.arange(0, 1, STEP)
+        pool = mp.Pool(process_count)
+        results = pool.starmap(bspline, [(t, degree, points) for t in steps])
+        pool.close()
+
+        time2 = time.time()
+        print("%s processes. Time: %s" % (process_count, time2 - time1))
+
+        plt.figure()
+        for x, y in points:
+            plt.scatter(x, y, color='red')
+        result_x = [el[0] for el in results]
+        result_y = [el[1] for el in results]
+        plt.plot(result_x, result_y, color='blue')
+        plt.grid(True)
+        plt.savefig('beta_spline_result.png')
+
+
+if __name__ == "__main__":
+    start()

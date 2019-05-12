@@ -20,16 +20,18 @@ def calculate_coord(points, t):
         y = y + (binomial(index, len(points) - 1) * (t ** index) * (1 - t) ** ((len(points) - 1) - index)) * point[1]
     return x, y
 
-def divide_chunks(l, n):       
-    for i in range(0, len(l), n):  
+
+def divide_chunks(l, n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
+
 
 def start():
     # points = [(0, 0), (1, 1), (2, 0), (3, 0.5), (2, 2), (0.5, 5)]
     points = np.random.random(POINT_COUNT)
     points = [(idx, p) for idx, p in enumerate(points)]
 
-    degree = 25  #number of points for approximation
+    degree = 25  # number of points for approximation
     for pn in PROCESSES:
         process_count = 2 ** pn
 
