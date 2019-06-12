@@ -59,31 +59,48 @@ def start():
     #     (1.0, 0.0)
     # ]
 
+    # генерування рандомних точок
     points = np.random.random(POINT_COUNT)
     points = [(idx, p) for idx, p in enumerate(points)]
 
-    degree = 25  # number of points for approximation
+    # кількість точок для апроксимації
+    degree = 25
     # knots = [0, 1, 2, 3, 4, 5, 6]
+    # цикл що змінює кількість процесів
     for pn in PROCESSES:
+        # кількість процесів
         process_count = 2 ** pn
 
+        # час початку виконання
         time1 = time.time()
 
+        # масив що містить числа від нуля до одиниці з певним кроком
         steps = np.arange(0, 1, STEP)
+        # пул запущених процесів
         pool = mp.Pool(process_count)
+        # масив з результатами
+        # виклик функції бетасплайну в окремому процесі з певним кроком
         results = pool.starmap(bspline, [(t, degree, points) for t in steps])
+        # закривання пулу процесів
         pool.close()
 
+        # час закінчення виконання
         time2 = time.time()
         print("%s processes. Time: %s" % (process_count, time2 - time1))
 
+        # створення графіку
         plt.figure()
+        # позначення точок на графіку
         for x, y in points:
             plt.scatter(x, y, color='red')
+        # видобування координати х з масиву результатів
         result_x = [el[0] for el in results]
+        # видобування координати у з масиву результатів
         result_y = [el[1] for el in results]
+        # відображення графіку
         plt.plot(result_x, result_y, color='blue')
         plt.grid(True)
+        # записування графіку до файлу
         plt.savefig('beta_spline_result.png')
 
 
