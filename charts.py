@@ -65,4 +65,21 @@ if __name__ == "__main__":
         plt.plot(result_x2, result_y2, color='green')
         plt.savefig('together_%s.png' % degree)
 
+        error_1 = list()
+        error_2 = list()
+        for x, y in points:
+            diff1 = [abs(x-el) for el in result_x1]
+            min_diff1 = min(diff1)
+            min_diff_ind1 = diff1.index(min_diff1)
+
+            diff2 = [abs(x-el) for el in result_x2]
+            min_diff2 = min(diff2)
+            min_diff_ind2 = diff2.index(min_diff2)
+
+            error_1.append(abs(result_y1[min_diff_ind1] - y))
+            error_2.append(abs(result_y2[min_diff_ind2] - y))
+
+        print(error_1)
+        print(error_2)
+
         # plt.savefig('beta_spline_result_all.png')
